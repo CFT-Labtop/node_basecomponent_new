@@ -66,7 +66,7 @@ class BaseRouter {
         this.setGetUserMiddleware()
         this.setAuthAPI()
         this.classList.forEach(f => {
-            this.app.post(config.base_path +"get/"  +f.name, async (req, res, next) => {
+            this.app.post(config.base_path + "get/" +f.name, async (req, res, next) => {
                 try{
                     var options = Object.assign(req.body, this.generateCheckUserOptions(req))
                     if(req.body.ID == null){
@@ -115,7 +115,7 @@ class BaseRouter {
                     next(error)
                 }
             })
-            this.app.delete(config.base_path + f.name, async (req, res, next) => {
+            this.app.post(config.base_path + "delete/" + f.name, async (req, res, next) => {
                 try{
                     var options = Object.assign(req.body, this.generateCheckUserOptions(req))
                     await databaseHelper.delete(f, req.body.ID, options)
@@ -280,7 +280,7 @@ class BaseRouter {
                 name: err.name,
                 stack: err.stack
             }
-            fs.appendFile(global.__basedir + "/log/errorLog_" + moment().format("YYYY-MM-DD"), JSON.stringify({req: requestInformation, err: errorLog}) + "\n", err => {
+            fs.appendFile(global._basedir + "/log/errorLog" + moment().format("YYYY-MM-DD"), JSON.stringify({req: requestInformation, err: errorLog}) + "\n", err => {
                 if (err) {console.error(err);}
             })
             res.json({code: err.code ?? "UNKNOWN", message: err.message, stack: err.stack})
@@ -288,7 +288,7 @@ class BaseRouter {
     }
     setLogMiddleware(){
         this.app.use((req, res, next) => {
-            fs.appendFile(global.__basedir + "/log/log_" + moment().format("YYYY-MM-DD"), JSON.stringify({
+            fs.appendFile(global._basedir + "/log/log" + moment().format("YYYY-MM-DD"), JSON.stringify({
                 baseUrl: req.baseUrl,
                 body: req.body,
                 query: req.query,
@@ -344,4 +344,4 @@ function randomString(length) {
    return result;
 }
 
-module.exports = BaseRouter
+module.exports = BaseRouter

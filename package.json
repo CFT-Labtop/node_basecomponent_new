@@ -1,6 +1,6 @@
 {
-  "name": "node_basecomponent",
-  "version": "0.0.20",
+  "name": "node_basecomponent_new",
+  "version": "0.0.22",
   "description": "",
   "main": "index.js",
   "scripts": {
