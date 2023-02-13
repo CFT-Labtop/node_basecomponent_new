@@ -11,6 +11,7 @@ const bodyParser = require('body-parser')
 const session = require('express-session');
 const FileStore = require('session-file-store')(session);
 const crypto = require('crypto');
+const AWS = require('aws-sdk');
 var databaseHelper = new DatabaseHelper()
 class BaseRouter {
     classList = []
@@ -64,9 +65,12 @@ class BaseRouter {
         this.setSecretMiddleware()
         this.setApikeyMiddleware()
         this.setGetUserMiddleware()
+        if(config.isAWSBucket){
+            this.setAWSBucketMiddleware()
+        }
         this.setAuthAPI()
         this.classList.forEach(f => {
-            this.app.post(config.base_path + "get/" +f.name, async (req, res, next) => {
+            this.app.post(config.base_path +"get/"  +f.name, async (req, res, next) => {
                 try{
                     var options = Object.assign(req.body, this.generateCheckUserOptions(req))
                     if(req.body.ID == null){
@@ -115,7 +119,7 @@ class BaseRouter {
                     next(error)
                 }
             })
-            this.app.post(config.base_path + "delete/" + f.name, async (req, res, next) => {
+            this.app.delete(config.base_path + f.name, async (req, res, next) => {
                 try{
                     var options = Object.assign(req.body, this.generateCheckUserOptions(req))
                     await databaseHelper.delete(f, req.body.ID, options)
@@ -280,7 +284,7 @@ class BaseRouter {
                 name: err.name,
                 stack: err.stack
             }
-            fs.appendFile(global._basedir + "/log/errorLog" + moment().format("YYYY-MM-DD"), JSON.stringify({req: requestInformation, err: errorLog}) + "\n", err => {
+            fs.appendFile(global.__basedir + "/log/errorLog_" + moment().format("YYYY-MM-DD"), JSON.stringify({req: requestInformation, err: errorLog}) + "\n", err => {
                 if (err) {console.error(err);}
             })
             res.json({code: err.code ?? "UNKNOWN", message: err.message, stack: err.stack})
@@ -288,7 +292,7 @@ class BaseRouter {
     }
     setLogMiddleware(){
         this.app.use((req, res, next) => {
-            fs.appendFile(global._basedir + "/log/log" + moment().format("YYYY-MM-DD"), JSON.stringify({
+            fs.appendFile(global.__basedir + "/log/log_" + moment().format("YYYY-MM-DD"), JSON.stringify({
                 baseUrl: req.baseUrl,
                 body: req.body,
                 query: req.query,
@@ -326,6 +330,32 @@ class BaseRouter {
             }
         });
     }
+    setAWSBucketMiddleware(){
+        AWS.config.update({region: config.bucket_region});
+        const s3 = new AWS.S3({ accessKeyId: config.bucket_keyID, secretAccessKey: config.bucket_secret, })
+
+        this.app.post(config.base_path + "uploadFile_AWS", async (req, res, next) => {
+            try{
+                var file = req.files.file
+                var fileName = randomString(24) + "_" + moment().format("YYYY_MM_DD_HH_mm_ss") + "." + mime.extension(file.mimetype)
+                const uploadToBucket = () => {
+                    const params = { Bucket: config.bucket_name, Key: `uploads/${fileName}`, Body: file.data, };
+                    var path = null
+                    s3.upload(params, function(s3Err, data) {
+                        if (s3Err) throw s3Err
+                        console.log(`File uploaded successfully at ${data.Location}`)
+                        path = data.Location
+                    });
+                    return path
+                };
+                var response = successResponseMessage()
+                response.data.path = uploadToBucket()
+                res.json(response)
+            }catch(error){
+                console.log(error)
+            }
+        })
+    }
 }
 function successResponseMessage(){
     return {
@@ -344,4 +374,4 @@ function randomString(length) {
    return result;
 }
 
-module.exports = BaseRouter
+module.exports = BaseRouter
