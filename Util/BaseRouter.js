@@ -270,6 +270,7 @@ class BaseRouter {
         this.app.use((err, req, res, next) => {
             var requestInformation = {
                 baseUrl: req.baseUrl,
+                originalUrl: req.originalUrl,
                 body: req.body,
                 query: req.query,
                 ip: req.ip,
@@ -294,6 +295,7 @@ class BaseRouter {
         this.app.use((req, res, next) => {
             fs.appendFile(global.__basedir + "/log/log_" + moment().format("YYYY-MM-DD"), JSON.stringify({
                 baseUrl: req.baseUrl,
+                originalUrl: req.originalUrl,
                 body: req.body,
                 query: req.query,
                 ip: req.ip,
