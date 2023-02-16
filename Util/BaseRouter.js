@@ -3,7 +3,6 @@ const DatabaseHelper = require("./DatabaseHelper")
 const BaseUser = require("../Model/BaseUser");
 const express = require('express')
 const fs = require("fs")
-const moment = require("moment")
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
 const mime = require('mime-types')
@@ -11,6 +10,9 @@ const bodyParser = require('body-parser')
 const session = require('express-session');
 const FileStore = require('session-file-store')(session);
 const crypto = require('crypto');
+var moment = require('moment-timezone');
+moment.tz.setDefault('Asia/Hong_Kong').format()
+
 const AWS = require('aws-sdk');
 var databaseHelper = new DatabaseHelper()
 class BaseRouter {
