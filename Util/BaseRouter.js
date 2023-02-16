@@ -11,9 +11,9 @@ const session = require('express-session');
 const FileStore = require('session-file-store')(session);
 const crypto = require('crypto');
 var moment = require('moment-timezone');
-moment.tz.setDefault('Asia/Hong_Kong').format()
+moment.tz.setDefault('Asia/Hong_Kong')
 
-const AWS = require('aws-sdk');
+const AWS = {S3} = require("@aws-sdk/client-s3");
 var databaseHelper = new DatabaseHelper()
 class BaseRouter {
     classList = []
@@ -335,8 +335,9 @@ class BaseRouter {
         });
     }
     setAWSBucketMiddleware(){
-        AWS.config.update({region: config.bucket_region});
-        const s3 = new AWS.S3({ accessKeyId: config.bucket_keyID, secretAccessKey: config.bucket_secret, })
+        const s3 = new S3(
+            { accessKeyId: config.bucket_keyID, secretAccessKey: config.bucket_secret, region: config.bucket_region }
+        )
 
         this.app.post(config.base_path + "uploadFile_AWS", async (req, res, next) => {
             try{
