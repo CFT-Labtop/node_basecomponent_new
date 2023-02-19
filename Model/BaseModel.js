@@ -36,8 +36,12 @@ class BaseModel {
                         }
                         break;
                     case "ARRAY":
-                        if(parameters.hasOwnProperty(key))
-                            this[key] = JSON.parse(parameters[key])
+                        try {
+                            if(parameters.hasOwnProperty(key))
+                                this[key] = JSON.parse(parameters[key])
+                        } catch (error) {
+                            this[key] = []
+                        }
                         break;
                     case "TO_MULTI":
                         try{
