@@ -13,7 +13,7 @@ const crypto = require('crypto');
 var moment = require('moment-timezone');
 moment.tz.setDefault('Asia/Hong_Kong')
 
-const AWS = {S3} = require("@aws-sdk/client-s3");
+const {S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 var databaseHelper = new DatabaseHelper()
 class BaseRouter {
     classList = []
@@ -335,26 +335,27 @@ class BaseRouter {
         });
     }
     setAWSBucketMiddleware(){
-        const s3 = new S3(
-            { accessKeyId: config.bucket_keyID, secretAccessKey: config.bucket_secret, region: config.bucket_region }
+        const s3Client = new S3Client(
+            { region: config.bucket_region, credentials: {accessKeyId: config.bucket_keyID, secretAccessKey: config.bucket_secret} }
         )
 
         this.app.post(config.base_path + "uploadFile_AWS", async (req, res, next) => {
             try{
                 var file = req.files.file
                 var fileName = randomString(24) + "_" + moment().format("YYYY_MM_DD_HH_mm_ss") + "." + mime.extension(file.mimetype)
-                const uploadToBucket = () => {
-                    const params = { Bucket: config.bucket_name, Key: `uploads/${fileName}`, Body: file.data, };
-                    var path = null
-                    s3.upload(params, function(s3Err, data) {
-                        if (s3Err) throw s3Err
-                        console.log(`File uploaded successfully at ${data.Location}`)
-                        path = data.Location
-                    });
+                const uploadToBucket = async () => {
+                    const bucketParams = { Bucket: config.bucket_name, Key: `uploads/${fileName}`, Body: file.data, };
+                    var path = `uploads/${fileName}`
+                    try {
+                        const data = await s3Client.send(new PutObjectCommand(bucketParams));
+                        console.log("Success");
+                    } catch (error) {
+                        console.log("Error", error);
+                    }
                     return path
                 };
                 var response = successResponseMessage()
-                response.data.path = uploadToBucket()
+                response.data.path = await uploadToBucket()
                 res.json(response)
             }catch(error){
                 console.log(error)
