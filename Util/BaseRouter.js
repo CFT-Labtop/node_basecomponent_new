@@ -10,6 +10,7 @@ const bodyParser = require('body-parser')
 const session = require('express-session');
 const FileStore = require('session-file-store')(session);
 const crypto = require('crypto');
+const https = require("https");
 var moment = require('moment-timezone');
 moment.tz.setDefault('Asia/Hong_Kong')
 
@@ -146,9 +147,18 @@ class BaseRouter {
         global.__databaseHelper = databaseHelper
         await callback(this.app,databaseHelper)
         this.setErrorLogMiddleware()
-        this.app.listen(config.port, () => {
-            console.log(`Example app listening on port ${config.port}`)
-        })
+        
+        if(config.isHttps){
+            var privateKey = fs.readFileSync( 'private.pem' );
+            var certificate = fs.readFileSync( 'public.pem' );
+            https.createServer({ key: privateKey, cert: certificate }, this.app).listen(config.port, ()=>{
+                console.log(`Example app listening on port ${config.port}`)
+            });
+        }else{
+            this.app.listen(config.port, () => {
+                console.log(`Example app listening on port ${config.port}`)
+            })
+        }
     }
     setAuthAPI(){
         for(let i = 0; i < this.userClassList.length; i++){
