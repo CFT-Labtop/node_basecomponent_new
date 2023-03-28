@@ -150,6 +150,10 @@ class DatabaseHelper {
                             if(row[condition.key] != null && row[condition.key].includes(condition.value))
                                 return true;
                             break;
+                        case "INCLUDE_ARRAY":
+                            if(condition.value != null && condition.value.includes(row[condition.key]))
+                                return true;
+                            break;
                     }
                 }
                 return false;
@@ -179,6 +183,10 @@ class DatabaseHelper {
                         if(row[condition.key] != null && row[condition.key].includes(condition.value))
                             return true;
                         break;
+                    case "INCLUDE_ARRAY":
+                            if(condition.value != null && condition.value.includes(row[condition.key]))
+                                return true;
+                            break;
                 }
             })
             return rows
