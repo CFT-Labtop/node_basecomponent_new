@@ -201,7 +201,9 @@ class DatabaseHelper {
                         case "MULTI-SELECTION":
                             for(let i = 0; i < fieldObject.value.length; i++){
                                 var value = fieldObject.value[i]
-                                if(row[field] != null && row[field].includes(value))
+                                var isArray = Array.isArray(row[field])
+                                var isMatch = row[field] == value || (isArray && row[field].includes(value))
+                                if(row[field] != null && isMatch)
                                     return true
                             }
                             break;
