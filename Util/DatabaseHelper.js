@@ -207,6 +207,15 @@ class DatabaseHelper {
                                     return true
                             }
                             break;
+                        case "TIME-RANGE":
+                            if(fieldObject.value.length == 2){
+                                var startDate = new Date(fieldObject.value[0])
+                                var endDate = new Date(fieldObject.value[1])
+                                var targetDate = new Date(row[field]) 
+                                if(targetDate >= startDate && targetDate <= endDate)
+                                    return true
+                            }
+                            break;
                     }
                 }catch(e){
                     console.log(e);
