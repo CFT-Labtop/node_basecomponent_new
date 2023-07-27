@@ -72,7 +72,8 @@ class DatabaseHelper {
         var fields = classInstance.propertyField()
         return rows.filter(f => {
             for(const field in fields){
-                if(f[field] != null && f[field] != "" && f[field].toString().includes(search))
+                // if(f[field] != null && f[field] != "" && f[field].toString().includes(search))
+                if(f[field] != null && f[field] != "" && f[field].toString().toLowerCase().includes(search.toLowerCase()))
                     return true
             }
             return false
