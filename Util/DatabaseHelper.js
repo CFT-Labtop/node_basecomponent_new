@@ -359,7 +359,8 @@ class DatabaseHelper {
                     else
                         valueList.push(parameters[key])
                 })
-                query += "createdDate = '" + moment().format("YYYY-MM-DD HH:mm:ss") + "'"
+                query += "createdDate = '" + moment().format("YYYY-MM-DD HH:mm:ss") + "',"
+                query += "modifiedDate = '" + moment().format("YYYY-MM-DD HH:mm:ss") + "'"
             }catch(e){
                 reject(e)
             }
