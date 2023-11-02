@@ -247,42 +247,89 @@ class DatabaseHelper {
     }
     async getAll(classInstance, options = {}){
         return new Promise((resolve, reject) => {
-            this.connection.query("SELECT * FROM " + classInstance.name + " WHERE isDeleted = ?", [0], async (error, result, fields) =>{
-                if (error) reject(error);
-                try{
-                    var rows = result
-                    if(options.hasOwnProperty("whereCondition"))
-                        rows = this.handleWhereCondition(rows, options["whereCondition"], options["whereConditionType"] ?? "OR")
-                    if(options.hasOwnProperty("advancedSearch") && !_.isEmpty(options["advancedSearch"]))
-                        rows = this.handleAdvancedSearch(rows, options["advancedSearch"])
-                    if(options.hasOwnProperty("search") && options["search"] != "" && options["search"] != null)
-                        rows = this.handleSearch(rows, classInstance, options["search"])
-                    if(!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
-                        rows = this.checkingPermission(classInstance, options, rows, {}, "GET")
-                    var pageSize = rows.length
-                    if(options.hasOwnProperty("sortProp") || options.hasOwnProperty("sort"))
-                        rows = this.handleSort(classInstance, rows, options["sortProp"], options["sort"])
-                    if(options.hasOwnProperty("pageSize") || options.hasOwnProperty("page")){
-                        rows = this.handlePaging(rows, options["pageSize"], options["page"])
-                        if(options.hasOwnProperty("joinClass")){
-                            await this.handleJoinClass(options["joinClass"])
-                            rows = rows.map(f => new classInstance(Object.assign(f,{joinClass: options["joinClass"]})))
-                        }else
-                            rows = rows.map(f => new classInstance(f))
-                        resolve({data: rows, totalRow: pageSize})
-                    }else{
-                        if(options.hasOwnProperty("joinClass")){
-                            await this.handleJoinClass(options["joinClass"])
-                            rows = rows.map(f => new classInstance(Object.assign(f,{joinClass: options["joinClass"]})))
+            console.log('11111111111',options);
+            if(options.hasOwnProperty("rawQuery")&&options["rawQuery"]){
+                this.connection.query(options['rawQuery'], async (error, result, fields) =>{
+                    if (error) reject(error);
+                    try{
+                        console.log('sssssssss',result.length);
+                        var rows = result
+                        if(options.hasOwnProperty("whereOperation"))
+                            rows = this.handleWhereCondition(rows, options["whereOperation"], options["whereOperationType"] ?? "OR")
+                        if(options.hasOwnProperty("whereCondition"))
+                            rows = this.handleWhereCondition(rows, options["whereCondition"], options["whereConditionType"] ?? "OR")
+                        if(options.hasOwnProperty("advancedSearch") && !_.isEmpty(options["advancedSearch"]))
+                            rows = this.handleAdvancedSearch(rows, options["advancedSearch"])
+                        if(options.hasOwnProperty("search") && options["search"] != "" && options["search"] != null)
+                            rows = this.handleSearch(rows, classInstance, options["search"])
+                        if(!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
+                            rows = this.checkingPermission(classInstance, options, rows, {}, "GET")
+                        var pageSize = rows.length
+                        if(options.hasOwnProperty("sortProp") || options.hasOwnProperty("sort"))
+                            rows = this.handleSort(classInstance, rows, options["sortProp"], options["sort"])
+                        if(options.hasOwnProperty("pageSize") || options.hasOwnProperty("page")){
+                            rows = this.handlePaging(rows, options["pageSize"], options["page"])
+                            if(options.hasOwnProperty("joinClass")){
+                                await this.handleJoinClass(options["joinClass"])
+                                rows = rows.map(f => new classInstance(Object.assign(f,{joinClass: options["joinClass"]})))
+                            }else
+                                rows = rows.map(f => new classInstance(f))
+                            resolve({data: rows, totalRow: pageSize})
                         }else{
-                            rows = rows.map(f => new classInstance(f))
+                            if(options.hasOwnProperty("joinClass")){
+                                await this.handleJoinClass(options["joinClass"])
+                                rows = rows.map(f => new classInstance(Object.assign(f,{joinClass: options["joinClass"]})))
+                            }else{
+                                rows = rows.map(f => new classInstance(f))
+                            }
                         }
+                    }catch(e){
+                        reject(e)
                     }
-                }catch(e){
-                    reject(e)
-                }
-                resolve(rows)
-            });
+                    resolve(rows)
+                });
+            }else{
+                this.connection.query("SELECT * FROM " + classInstance.name + " WHERE isDeleted = ?", [0], async (error, result, fields) =>{
+                    if (error) reject(error);
+                    try{
+                        console.log('aaaaaaaaaa',result.length);
+                        var rows = result
+                        if(options.hasOwnProperty("whereOperation"))
+                            rows = this.handleWhereCondition(rows, options["whereOperation"], options["whereOperationType"] ?? "OR")
+                        if(options.hasOwnProperty("whereCondition"))
+                            rows = this.handleWhereCondition(rows, options["whereCondition"], options["whereConditionType"] ?? "OR")
+                        if(options.hasOwnProperty("advancedSearch") && !_.isEmpty(options["advancedSearch"]))
+                            rows = this.handleAdvancedSearch(rows, options["advancedSearch"])
+                        if(options.hasOwnProperty("search") && options["search"] != "" && options["search"] != null)
+                            rows = this.handleSearch(rows, classInstance, options["search"])
+                        if(!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
+                            rows = this.checkingPermission(classInstance, options, rows, {}, "GET")
+                        var pageSize = rows.length
+                        if(options.hasOwnProperty("sortProp") || options.hasOwnProperty("sort"))
+                            rows = this.handleSort(classInstance, rows, options["sortProp"], options["sort"])
+                        if(options.hasOwnProperty("pageSize") || options.hasOwnProperty("page")){
+                            rows = this.handlePaging(rows, options["pageSize"], options["page"])
+                            if(options.hasOwnProperty("joinClass")){
+                                await this.handleJoinClass(options["joinClass"])
+                                rows = rows.map(f => new classInstance(Object.assign(f,{joinClass: options["joinClass"]})))
+                            }else
+                                rows = rows.map(f => new classInstance(f))
+                            resolve({data: rows, totalRow: pageSize})
+                        }else{
+                            if(options.hasOwnProperty("joinClass")){
+                                await this.handleJoinClass(options["joinClass"])
+                                rows = rows.map(f => new classInstance(Object.assign(f,{joinClass: options["joinClass"]})))
+                            }else{
+                                rows = rows.map(f => new classInstance(f))
+                            }
+                        }
+                    }catch(e){
+                        reject(e)
+                    }
+                    resolve(rows)
+                });
+            }
+            
         })
     }
     async get(classInstance, ID, options = {}){
