@@ -315,7 +315,7 @@ class DatabaseHelper {
     }
     async getAll(classInstance, options = {}) {
         return new Promise((resolve, reject) => {
-            console.log('11111111111', options);
+            // console.log('11111111111', options);
             if (options.hasOwnProperty("rawQuery") && options["rawQuery"]) {
                 // console.log('2222222222',options);
                 this.connection.query(options['rawQuery'], async (error, result, fields) => {
