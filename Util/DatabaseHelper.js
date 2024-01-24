@@ -321,6 +321,7 @@ class DatabaseHelper {
                 this.connection.query(options['rawQuery'], async (error, result, fields) => {
                     if (error) reject(error);
                     try {
+                         //new ver 1
                         console.log('sssssssss', result.length);
                         var rows = await this.handleSearchByOptionsProperty(classInstance, result, options, resolve)
                         // var rows = result
@@ -366,6 +367,7 @@ class DatabaseHelper {
                 this.connection.query("SELECT * FROM " + classInstance.name + " WHERE isDeleted = ?", [0], async (error, result, fields) => {
                     if (error) reject(error);
                     try {
+                         //new ver 1
                         var rows = await this.handleSearchByOptionsProperty(classInstance, result, options, resolve)
                         // var rows = result
                         // if (options.hasOwnProperty("filterByCol") && options.hasOwnProperty("filterByColKey"))
