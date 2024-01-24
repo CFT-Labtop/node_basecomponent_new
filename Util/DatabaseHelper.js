@@ -18,30 +18,30 @@ class DatabaseHelper {
         });
         this.connection.connect()
     }
-    setClassList(classList){
+    setClassList(classList) {
         classList.forEach(f => {
-            if(f.prototype instanceof BaseUser)
+            if (f.prototype instanceof BaseUser)
                 this.userClassList.push(f)
             else
                 this.classList.push(f)
         })
         this.classList = classList
     }
-    releaseConnection(){
+    releaseConnection() {
         this.connection.destroy()
     }
-    beginTransaction(){
+    beginTransaction() {
         this.connection.beginTransaction()
     }
-    rollback(){
+    rollback() {
         this.connection.rollback()
     }
-    commit(){
+    commit() {
         this.connection.commit()
     }
-    filterParameter(classInstance, parameters){
+    filterParameter(classInstance, parameters) {
         var parameters = Object.keys(parameters).filter(key => classInstance.getRealField(classInstance.propertyField()).hasOwnProperty(key)).reduce((obj, key) => {
-            if(parameters[key] != null && typeof parameters[key] === 'string')
+            if (parameters[key] != null && typeof parameters[key] === 'string')
                 parameters[key].trim()
             obj[key] = parameters[key];
             return obj;
@@ -49,77 +49,78 @@ class DatabaseHelper {
         Object.keys(BaseModel.propertyField()).forEach(key => {
             delete parameters[key]
         })
-        for(const key in parameters){
-            if(parameters[key] === true)
+        for (const key in parameters) {
+            if (parameters[key] === true)
                 parameters[key] = 1
-            else if(parameters[key] === false)
+            else if (parameters[key] === false)
                 parameters[key] = 0
         }
         return parameters
     }
-    async handleJoinClass(joinClassList){
-        for(let i = 0; i < joinClassList.length; i++){
+    async handleJoinClass(joinClassList) {
+        for (let i = 0; i < joinClassList.length; i++) {
             var joinClass = joinClassList[i]
             joinClass = this.classList.find(f => f.name == joinClass)
-            global.__cachedMap[joinClass.name] = {classInstance: joinClass}
+            global.__cachedMap[joinClass.name] = { classInstance: joinClass }
             var result = await this.rawGetAll(joinClass)
             result.forEach(row => {
                 global.__cachedMap[joinClass.name][row.ID] = row
             })
         }
     }
-    handleSearch(rows, classInstance, search){
+    handleSearch(rows, classInstance, search) {
         var fields = classInstance.propertyField()
+        console.log('fffff', fields);
         return rows.filter(f => {
-            for(const field in fields){
+            for (const field in fields) {
                 // if(f[field] != null && f[field] != "" && f[field].toString().includes(search))
-                if(f[field] != null && f[field] != "" && f[field].toString().toLowerCase().includes(search.toLowerCase()))
+                if (f[field] != null && f[field] != "" && f[field].toString().toLowerCase().includes(search.toLowerCase()))
                     return true
             }
             return false
         })
     }
-    handlePaging(rows, pageSize = 25, page = 1){
-        rows = rows.slice(pageSize * (page - 1) , pageSize * page)
+    handlePaging(rows, pageSize = 25, page = 1) {
+        rows = rows.slice(pageSize * (page - 1), pageSize * page)
         return rows
     }
-    handleSort(classInstance, rows, sortProp = "ID", sort = "ascending"){
+    handleSort(classInstance, rows, sortProp = "ID", sort = "ascending") {
         var field = classInstance.propertyField()[sortProp]
         var fieldType = field != null ? field.type : BaseModel.propertyEnum().NUMBER
-        switch(fieldType){
+        switch (fieldType) {
             case BaseModel.propertyEnum().NUMBER:
                 rows.sort((a, b) => {
-                    try{
-                        if(sort == "ascending")
+                    try {
+                        if (sort == "ascending")
                             return a[sortProp] - b[sortProp]
                         else
                             return b[sortProp] - a[sortProp]
-                    }catch(e){
+                    } catch (e) {
                         return false
                     }
                 })
                 break;
             case BaseModel.propertyEnum().STRING:
                 rows.sort((a, b) => {
-                    try{
-                        if(sort == "ascending")
+                    try {
+                        if (sort == "ascending")
                             return a[sortProp].localeCompare(b[sortProp])
                         else
                             return b[sortProp].localeCompare(a[sortProp])
-                    }catch(e){
+                    } catch (e) {
                         return false
                     }
                 })
                 break;
             case BaseModel.propertyEnum().DATE:
                 rows.sort((a, b) => {
-                    try{
-                        if(sort == "ascending")
+                    try {
+                        if (sort == "ascending")
                             return moment(a[sortProp]).diff(b[sortProp])
-                        else{
+                        else {
                             return moment(b[sortProp]).diff(a[sortProp])
                         }
-                    }catch(e){
+                    } catch (e) {
                         return false
                     }
                 })
@@ -127,32 +128,32 @@ class DatabaseHelper {
         }
         return rows
     }
-    handleWhereCondition(rows, whereCondition, whereConditionType){
-        if(whereConditionType == "OR"){
+    handleWhereCondition(rows, whereCondition, whereConditionType) {
+        if (whereConditionType == "OR") {
             rows = rows.filter(row => {
-                for(let i = 0; i < whereCondition.length; i++){
+                for (let i = 0; i < whereCondition.length; i++) {
                     var condition = whereCondition[i]
-                    if(condition.value == "NULL")
+                    if (condition.value == "NULL")
                         condition.value = null
-                    switch(condition.type){
+                    switch (condition.type) {
                         case "EQUAL":
-                            if(row[condition.key] == condition.value)
+                            if (row[condition.key] == condition.value)
                                 return true;
                             break;
                         case "NOT_EQUAL":
-                            if(row[condition.key] != condition.value)
+                            if (row[condition.key] != condition.value)
                                 return true;
                             break;
                         case "ARRAY_INCLUDE":
-                            if(row[condition.key].includes(condition.value))
+                            if (row[condition.key].includes(condition.value))
                                 return true;
                             break;
                         case "INCLUDE":
-                            if(row[condition.key] != null && row[condition.key].includes(condition.value))
+                            if (row[condition.key] != null && row[condition.key].includes(condition.value))
                                 return true;
                             break;
                         case "INCLUDE_ARRAY":
-                            if(condition.value != null && condition.value.includes(row[condition.key]))
+                            if (condition.value != null && condition.value.includes(row[condition.key]))
                                 return true;
                             break;
                     }
@@ -160,65 +161,65 @@ class DatabaseHelper {
                 return false;
             })
             return rows;
-        }else if(whereConditionType == "AND"){
+        } else if (whereConditionType == "AND") {
             whereCondition.forEach(condition => {
-                if(condition.value == "NULL")
+                if (condition.value == "NULL")
                     condition.value = null
-                switch(condition.type){
+                switch (condition.type) {
                     case "EQUAL":
-                        rows = rows.filter(row =>{
+                        rows = rows.filter(row => {
                             return row[condition.key] == condition.value
                         })
                         break;
                     case "NOT_EQUAL":
-                        rows = rows.filter(row =>{
+                        rows = rows.filter(row => {
                             return row[condition.key] != condition.value
                         })
                         break;
                     case "ARRAY_INCLUDE":
-                        rows = rows.filter(row =>{
+                        rows = rows.filter(row => {
                             return row[condition.key].includes(condition.value)
                         })
                         break;
                     case "INCLUDE":
-                        if(row[condition.key] != null && row[condition.key].includes(condition.value))
+                        if (row[condition.key] != null && row[condition.key].includes(condition.value))
                             return true;
                         break;
                     case "INCLUDE_ARRAY":
-                            if(condition.value != null && condition.value.includes(row[condition.key]))
-                                return true;
-                            break;
+                        if (condition.value != null && condition.value.includes(row[condition.key]))
+                            return true;
+                        break;
                 }
             })
             return rows
         }
     }
-    handleAdvancedSearch(rows, advancedSearch){
+    handleAdvancedSearch(rows, advancedSearch) {
         return rows.filter(row => {
-            for(const field in advancedSearch){
-                try{
+            for (const field in advancedSearch) {
+                try {
                     var fieldObject = advancedSearch[field]
-                    switch(fieldObject.type){
+                    switch (fieldObject.type) {
                         case "MULTI-SELECTION":
-                            for(let i = 0; i < fieldObject.value.length; i++){
+                            for (let i = 0; i < fieldObject.value.length; i++) {
                                 var value = fieldObject.value[i]
                                 var isArray = Array.isArray(row[field])
                                 var isMatch = row[field] == value || (isArray && row[field].includes(value))
-                                if(row[field] != null && isMatch)
+                                if (row[field] != null && isMatch)
                                     return true
                             }
                             break;
                         case "TIME-RANGE":
-                            if(fieldObject.value.length == 2){
+                            if (fieldObject.value.length == 2) {
                                 var startDate = new Date(fieldObject.value[0])
                                 var endDate = new Date(fieldObject.value[1])
-                                var targetDate = new Date(row[field]) 
-                                if(targetDate >= startDate && targetDate <= endDate)
+                                var targetDate = new Date(row[field])
+                                if (targetDate >= startDate && targetDate <= endDate)
                                     return true
                             }
                             break;
                     }
-                }catch(e){
+                } catch (e) {
                     console.log(e);
                 }
             }
@@ -227,275 +228,352 @@ class DatabaseHelper {
     }
     async rawQuery(query) {
         return new Promise((resolve, reject) => {
-            this.connection.query(query, function(error, result, fields) {
+            this.connection.query(query, function (error, result, fields) {
                 if (error) reject(error);
                 resolve(result)
             });
         })
     }
-    async rawGetAll(classInstance){
+    async rawGetAll(classInstance) {
         return new Promise((resolve, reject) => {
-            this.connection.query("SELECT * FROM " + classInstance.name + " WHERE isDeleted = ?", [0], async (error, result, fields) =>{
+            this.connection.query("SELECT * FROM " + classInstance.name + " WHERE isDeleted = ?", [0], async (error, result, fields) => {
                 if (error) reject(error);
-                try{
+                try {
                     resolve(result)
-                }catch(e){
+                } catch (e) {
                     reject(e)
                 }
             })
         })
     }
-    async getAll(classInstance, options = {}){
+
+    async handleSearchByOptionsProperty(classInstance, result, options, resolve) {
+        console.log('handleSearchByOptionsProperty', result);
+        var rows = result
+        if (options.hasOwnProperty("filterByCol") && options.hasOwnProperty("filterByColKey"))
+            rows = this.handleFilterByColQuery(rows, options['filterByCol'], options['filterByColKey'])
+        // rows =   this.handleFilterByColQuery(rows)
+        if (options.hasOwnProperty("whereOperation"))
+            rows = this.handleWhereCondition(rows, options["whereOperation"], options["whereOperationType"] ?? "OR")
+        if (options.hasOwnProperty("whereCondition"))
+            rows = this.handleWhereCondition(rows, options["whereCondition"], options["whereConditionType"] ?? "OR")
+        if (options.hasOwnProperty("advancedSearch") && !_.isEmpty(options["advancedSearch"]))
+            rows = this.handleAdvancedSearch(rows, options["advancedSearch"])
+        if (options.hasOwnProperty("search") && options["search"] != "" && options["search"] != null)
+            rows = this.handleSearch(rows, classInstance, options["search"])
+        if (!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
+            rows = this.checkingPermission(classInstance, options, rows, {}, "GET")
+        var pageSize = rows.length
+        if (options.hasOwnProperty("sortProp") || options.hasOwnProperty("sort"))
+            rows = this.handleSort(classInstance, rows, options["sortProp"], options["sort"])
+        if (options.hasOwnProperty("pageSize") || options.hasOwnProperty("page")) {
+            rows = this.handlePaging(rows, options["pageSize"], options["page"])
+            if (options.hasOwnProperty("joinClass")) {
+                await this.handleJoinClass(options["joinClass"])
+                rows = rows.map(f => new classInstance(Object.assign(f, { joinClass: options["joinClass"] })))
+            } else
+                rows = rows.map(f => new classInstance(f))
+            resolve({ data: rows, totalRow: pageSize })
+        } else {
+            if (options.hasOwnProperty("joinClass")) {
+                await this.handleJoinClass(options["joinClass"])
+                rows = rows.map(f => new classInstance(Object.assign(f, { joinClass: options["joinClass"] })))
+            } else {
+                rows = rows.map(f => new classInstance(f))
+            }
+        }
+        return rows
+    }
+
+    handleFilterByColQuery(rows, filterByCol, filterByColKey) {
+        //    const filterByColQueryToJson =filterByColQuery
+        console.log('filterByColQueryToJson', filterByCol, filterByColKey);
+
+        const newRow = rows.filter(f => {
+            // for(const field in fields){
+            //     if(f[field] != null && f[field] != "" && f[field].toString().toLowerCase().includes(search.toLowerCase()))
+            //         return true
+            // }
+            // console.log('aaaa',filterByCol);
+            // console.log('bmbmbm',f[filterByCol]);
+            if (f[filterByCol] != null && f[filterByCol] != "" && f[filterByCol].toString().toLowerCase().includes(filterByColKey.toLowerCase()))
+                return true
+            else
+                return false
+        })
+        console.log('newRow', newRow);
+        return newRow
+        // var fields = classInstance.propertyField()
+        // return rows.filter(f => {
+        //     for(const field in fields){
+        //         // if(f[field] != null && f[field] != "" && f[field].toString().includes(search))
+        //         if(f[field] != null && f[field] != "" && f[field].toString().toLowerCase().includes(search.toLowerCase()))
+        //             return true
+        //     }
+        //     return false
+        // })
+    }
+    async getAll(classInstance, options = {}) {
         return new Promise((resolve, reject) => {
-            console.log('11111111111',options);
-            if(options.hasOwnProperty("rawQuery")&&options["rawQuery"]){
-                this.connection.query(options['rawQuery'], async (error, result, fields) =>{
+            console.log('11111111111', options);
+            if (options.hasOwnProperty("rawQuery") && options["rawQuery"]) {
+                // console.log('2222222222',options);
+                this.connection.query(options['rawQuery'], async (error, result, fields) => {
                     if (error) reject(error);
-                    try{
-                        console.log('sssssssss',result.length);
-                        var rows = result
-                        if(options.hasOwnProperty("whereOperation"))
-                            rows = this.handleWhereCondition(rows, options["whereOperation"], options["whereOperationType"] ?? "OR")
-                        if(options.hasOwnProperty("whereCondition"))
-                            rows = this.handleWhereCondition(rows, options["whereCondition"], options["whereConditionType"] ?? "OR")
-                        if(options.hasOwnProperty("advancedSearch") && !_.isEmpty(options["advancedSearch"]))
-                            rows = this.handleAdvancedSearch(rows, options["advancedSearch"])
-                        if(options.hasOwnProperty("search") && options["search"] != "" && options["search"] != null)
-                            rows = this.handleSearch(rows, classInstance, options["search"])
-                        if(!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
-                            rows = this.checkingPermission(classInstance, options, rows, {}, "GET")
-                        var pageSize = rows.length
-                        if(options.hasOwnProperty("sortProp") || options.hasOwnProperty("sort"))
-                            rows = this.handleSort(classInstance, rows, options["sortProp"], options["sort"])
-                        if(options.hasOwnProperty("pageSize") || options.hasOwnProperty("page")){
-                            rows = this.handlePaging(rows, options["pageSize"], options["page"])
-                            if(options.hasOwnProperty("joinClass")){
-                                await this.handleJoinClass(options["joinClass"])
-                                rows = rows.map(f => new classInstance(Object.assign(f,{joinClass: options["joinClass"]})))
-                            }else
-                                rows = rows.map(f => new classInstance(f))
-                            resolve({data: rows, totalRow: pageSize})
-                        }else{
-                            if(options.hasOwnProperty("joinClass")){
-                                await this.handleJoinClass(options["joinClass"])
-                                rows = rows.map(f => new classInstance(Object.assign(f,{joinClass: options["joinClass"]})))
-                            }else{
-                                rows = rows.map(f => new classInstance(f))
-                            }
-                        }
-                    }catch(e){
+                    try {
+                        console.log('sssssssss', result.length);
+                        var rows = await this.handleSearchByOptionsProperty(classInstance, result, options, resolve)
+                        // var rows = result
+                        // if (options.hasOwnProperty("filterByCol") && options.hasOwnProperty("filterByColKey"))
+                        // rows =  this.handleFilterByColQuery(rows, options['filterByCol'], options['filterByColKey'])
+                        // // rows =   this.handleFilterByColQuery(rows)
+                        // if (options.hasOwnProperty("whereOperation"))
+                        //     rows = this.handleWhereCondition(rows, options["whereOperation"], options["whereOperationType"] ?? "OR")
+                        // if (options.hasOwnProperty("whereCondition"))
+                        //     rows = this.handleWhereCondition(rows, options["whereCondition"], options["whereConditionType"] ?? "OR")
+                        // if (options.hasOwnProperty("advancedSearch") && !_.isEmpty(options["advancedSearch"]))
+                        //     rows = this.handleAdvancedSearch(rows, options["advancedSearch"])
+                        // if (options.hasOwnProperty("search") && options["search"] != "" && options["search"] != null)
+                        //     rows = this.handleSearch(rows, classInstance, options["search"])
+                        // if (!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
+                        //     rows = this.checkingPermission(classInstance, options, rows, {}, "GET")
+                        // var pageSize = rows.length
+                        // if (options.hasOwnProperty("sortProp") || options.hasOwnProperty("sort"))
+                        //     rows = this.handleSort(classInstance, rows, options["sortProp"], options["sort"])
+                        // if (options.hasOwnProperty("pageSize") || options.hasOwnProperty("page")) {
+                        //     rows = this.handlePaging(rows, options["pageSize"], options["page"])
+                        //     if (options.hasOwnProperty("joinClass")) {
+                        //         await this.handleJoinClass(options["joinClass"])
+                        //         rows = rows.map(f => new classInstance(Object.assign(f, { joinClass: options["joinClass"] })))
+                        //     } else
+                        //         rows = rows.map(f => new classInstance(f))
+                        //     resolve({ data: rows, totalRow: pageSize })
+                        // } else {
+                        //     if (options.hasOwnProperty("joinClass")) {
+                        //         await this.handleJoinClass(options["joinClass"])
+                        //         rows = rows.map(f => new classInstance(Object.assign(f, { joinClass: options["joinClass"] })))
+                        //     } else {
+                        //         rows = rows.map(f => new classInstance(f))
+                        //     }
+                        // }
+
+                    } catch (e) {
                         reject(e)
                     }
                     resolve(rows)
                 });
-            }else{
-                this.connection.query("SELECT * FROM " + classInstance.name + " WHERE isDeleted = ?", [0], async (error, result, fields) =>{
+            } else {
+                this.connection.query("SELECT * FROM " + classInstance.name + " WHERE isDeleted = ?", [0], async (error, result, fields) => {
                     if (error) reject(error);
-                    try{
-                        console.log('aaaaaaaaaa',result.length);
-                        var rows = result
-                        if(options.hasOwnProperty("whereOperation"))
-                            rows = this.handleWhereCondition(rows, options["whereOperation"], options["whereOperationType"] ?? "OR")
-                        if(options.hasOwnProperty("whereCondition"))
-                            rows = this.handleWhereCondition(rows, options["whereCondition"], options["whereConditionType"] ?? "OR")
-                        if(options.hasOwnProperty("advancedSearch") && !_.isEmpty(options["advancedSearch"]))
-                            rows = this.handleAdvancedSearch(rows, options["advancedSearch"])
-                        if(options.hasOwnProperty("search") && options["search"] != "" && options["search"] != null)
-                            rows = this.handleSearch(rows, classInstance, options["search"])
-                        if(!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
-                            rows = this.checkingPermission(classInstance, options, rows, {}, "GET")
-                        var pageSize = rows.length
-                        if(options.hasOwnProperty("sortProp") || options.hasOwnProperty("sort"))
-                            rows = this.handleSort(classInstance, rows, options["sortProp"], options["sort"])
-                        if(options.hasOwnProperty("pageSize") || options.hasOwnProperty("page")){
-                            rows = this.handlePaging(rows, options["pageSize"], options["page"])
-                            if(options.hasOwnProperty("joinClass")){
-                                await this.handleJoinClass(options["joinClass"])
-                                rows = rows.map(f => new classInstance(Object.assign(f,{joinClass: options["joinClass"]})))
-                            }else
-                                rows = rows.map(f => new classInstance(f))
-                            resolve({data: rows, totalRow: pageSize})
-                        }else{
-                            if(options.hasOwnProperty("joinClass")){
-                                await this.handleJoinClass(options["joinClass"])
-                                rows = rows.map(f => new classInstance(Object.assign(f,{joinClass: options["joinClass"]})))
-                            }else{
-                                rows = rows.map(f => new classInstance(f))
-                            }
-                        }
-                    }catch(e){
+                    try {
+                        var rows = await this.handleSearchByOptionsProperty(classInstance, result, options, resolve)
+                        // var rows = result
+                        // if (options.hasOwnProperty("filterByCol") && options.hasOwnProperty("filterByColKey"))
+                        //   rows =    this.handleFilterByColQuery(rows, options['filterByCol'], options['filterByColKey'])
+                        // // rows =  this.handleFilterByColQuery(rows)
+                        // if (options.hasOwnProperty("whereOperation"))
+                        //     rows = this.handleWhereCondition(rows, options["whereOperation"], options["whereOperationType"] ?? "OR")
+                        // if (options.hasOwnProperty("whereCondition"))
+                        //     rows = this.handleWhereCondition(rows, options["whereCondition"], options["whereConditionType"] ?? "OR")
+                        // if (options.hasOwnProperty("advancedSearch") && !_.isEmpty(options["advancedSearch"]))
+                        //     rows = this.handleAdvancedSearch(rows, options["advancedSearch"])
+                        // if (options.hasOwnProperty("search") && options["search"] != "" && options["search"] != null)
+                        //     rows = this.handleSearch(rows, classInstance, options["search"])
+                        // if (!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
+                        //     rows = this.checkingPermission(classInstance, options, rows, {}, "GET")
+                        // var pageSize = rows.length
+                        // if (options.hasOwnProperty("sortProp") || options.hasOwnProperty("sort"))
+                        //     rows = this.handleSort(classInstance, rows, options["sortProp"], options["sort"])
+                        // if (options.hasOwnProperty("pageSize") || options.hasOwnProperty("page")) {
+                        //     rows = this.handlePaging(rows, options["pageSize"], options["page"])
+                        //     if (options.hasOwnProperty("joinClass")) {
+                        //         await this.handleJoinClass(options["joinClass"])
+                        //         rows = rows.map(f => new classInstance(Object.assign(f, { joinClass: options["joinClass"] })))
+                        //     } else
+                        //         rows = rows.map(f => new classInstance(f))
+                        //     resolve({ data: rows, totalRow: pageSize })
+                        // } else {
+                        //     if (options.hasOwnProperty("joinClass")) {
+                        //         await this.handleJoinClass(options["joinClass"])
+                        //         rows = rows.map(f => new classInstance(Object.assign(f, { joinClass: options["joinClass"] })))
+                        //     } else {
+                        //         rows = rows.map(f => new classInstance(f))
+                        //     }
+                        // }
+
+                    } catch (e) {
                         reject(e)
                     }
                     resolve(rows)
                 });
             }
-            
+
         })
     }
-    async get(classInstance, ID, options = {}){
+    async get(classInstance, ID, options = {}) {
         return new Promise((resolve, reject) => {
-            this.connection.query("SELECT * FROM " + classInstance.name + " WHERE isDeleted = ? AND ID = ?", [0, ID], async (error, result, fields) =>{
+            this.connection.query("SELECT * FROM " + classInstance.name + " WHERE isDeleted = ? AND ID = ?", [0, ID], async (error, result, fields) => {
                 if (error) reject(error);
-                try{
-                    if(options.hasOwnProperty("joinClass")){
+                try {
+                    if (options.hasOwnProperty("joinClass")) {
                         await this.handleJoinClass(options["joinClass"])
-                        var rows = result.map(f => new classInstance(Object.assign(f,{joinClass: options["joinClass"]})))
-                    }else{
-                        var rows = result.map(f => new classInstance(f))   
+                        var rows = result.map(f => new classInstance(Object.assign(f, { joinClass: options["joinClass"] })))
+                    } else {
+                        var rows = result.map(f => new classInstance(f))
                     }
-                    var rows = result.map(f => new classInstance(f, {joinClass: options["joinClass"]}))
-                    if(!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
+                    var rows = result.map(f => new classInstance(f, { joinClass: options["joinClass"] }))
+                    if (!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
                         rows = this.checkingPermission(classInstance, options, rows, {}, "GET")
-                    if(rows.length > 0)
+                    if (rows.length > 0)
                         resolve(rows[0])
                     else
                         resolve(null)
-                }catch(e){
+                } catch (e) {
                     reject(e)
                 }
             });
         })
     }
-    async update(classInstance, parameters, options = {}){
+    async update(classInstance, parameters, options = {}) {
         return new Promise((resolve, reject) => {
-            try{
+            try {
                 var ID = parameters["ID"];
                 parameters = this.filterParameter(classInstance, parameters)
-                if(!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
+                if (!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
                     parameters = this.checkingPermission(classInstance, options, [], parameters, "UPDATE")
                 var query = "UPDATE " + classInstance.name + " SET "
                 var valueList = []
                 Object.keys(parameters).forEach(key => {
                     query += key + " = ?,"
-                    if(isJson(parameters[key]) && parameters[key] == "{}")
+                    if (isJson(parameters[key]) && parameters[key] == "{}")
                         valueList.push("{}")
-                    else if(isJson(parameters[key]))
+                    else if (isJson(parameters[key]))
                         valueList.push(JSON.stringify(parameters[key]))
-                    else if((classInstance.propertyField()[key].type == BaseModel.propertyEnum().NUMBER || classInstance.propertyField()[key].type == BaseModel.propertyEnum().BOOLEAN) && parameters[key] != null)
+                    else if ((classInstance.propertyField()[key].type == BaseModel.propertyEnum().NUMBER || classInstance.propertyField()[key].type == BaseModel.propertyEnum().BOOLEAN) && parameters[key] != null)
                         valueList.push(Number(parameters[key]))
                     else
                         valueList.push(parameters[key])
                 })
                 query += "modifiedDate = '" + moment().format("YYYY-MM-DD HH:mm:ss") + "'"
                 query += " WHERE ID = " + ID
-            }catch(e){
+            } catch (e) {
                 reject(e)
             }
-            this.connection.query(query,valueList, (error, result, fields)=> {
+            this.connection.query(query, valueList, (error, result, fields) => {
                 if (error) reject(error);
                 resolve(ID)
             })
         })
     }
-    async insert(classInstance, parameters, options = {}){
+    async insert(classInstance, parameters, options = {}) {
         return new Promise((resolve, reject) => {
-            try{
+            try {
                 parameters = this.filterParameter(classInstance, parameters)
-                if(!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
+                if (!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
                     parameters = this.checkingPermission(classInstance, options, [], parameters, "INSERT")
                 parameters = classInstance.setParameterDefaultValue(parameters)
                 var query = "INSERT INTO " + classInstance.name + " SET "
                 var valueList = []
                 Object.keys(parameters).forEach(key => {
                     query += key + " = ?,"
-                    if(isJson(parameters[key]) && parameters[key] == "{}")
+                    if (isJson(parameters[key]) && parameters[key] == "{}")
                         valueList.push("{}")
-                    else if(isJson(parameters[key]))
+                    else if (isJson(parameters[key]))
                         valueList.push(JSON.stringify(parameters[key]))
-                    else if((classInstance.propertyField()[key].type == BaseModel.propertyEnum().NUMBER || classInstance.propertyField()[key].type == BaseModel.propertyEnum().BOOLEAN) && parameters[key] != null)
+                    else if ((classInstance.propertyField()[key].type == BaseModel.propertyEnum().NUMBER || classInstance.propertyField()[key].type == BaseModel.propertyEnum().BOOLEAN) && parameters[key] != null)
                         valueList.push(Number(parameters[key]))
                     else
                         valueList.push(parameters[key])
                 })
                 query += "createdDate = '" + moment().format("YYYY-MM-DD HH:mm:ss") + "',"
                 query += "modifiedDate = '" + moment().format("YYYY-MM-DD HH:mm:ss") + "'"
-            }catch(e){
+            } catch (e) {
                 reject(e)
             }
-            this.connection.query(query, valueList,(error, result, fields)=> {
+            this.connection.query(query, valueList, (error, result, fields) => {
                 if (error) reject(error);
-                if(result == null)
+                if (result == null)
                     resolve(null)
                 else
                     resolve(result.insertId)
             })
         })
     }
-    async delete(classInstance, ID, options = {}){
+    async delete(classInstance, ID, options = {}) {
         return new Promise((resolve, reject) => {
-            try{
+            try {
                 var query = "UPDATE " + classInstance.name + " SET isDeleted = 1, "
                 query += "modifiedDate = '" + moment().format("YYYY-MM-DD HH:mm:ss") + "'"
                 query += " WHERE ID = " + ID
-                if(!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
+                if (!(options.hasOwnProperty("ignoreChecking") && options.ignoreChecking == true))
                     this.checkingPermission(classInstance, options, [], {}, "DELETE")
-                this.connection.query(query, (error, result, fields)=> {
+                this.connection.query(query, (error, result, fields) => {
                     if (error) reject(error);
                     resolve(ID)
                 })
                 resolve(ID)
-            }catch(e){
+            } catch (e) {
                 reject(e)
             }
         })
     }
-    static checkRequestUserType(user, allowedTypeList){
-        for(let i = 0; i < user.type.length; i++){
+    static checkRequestUserType(user, allowedTypeList) {
+        for (let i = 0; i < user.type.length; i++) {
             var type = user.type[0]
-            if(allowedTypeList.includes(type))
+            if (allowedTypeList.includes(type))
                 return true
         }
         return false
     }
-    checkingPermission(classInstance, options, rows = [], parameters = {} ,actionType){
-        switch(actionType){
+    checkingPermission(classInstance, options, rows = [], parameters = {}, actionType) {
+        switch (actionType) {
             case "GET":
-                if(!options.hasOwnProperty("checkUserPermission") && typeof classInstance.permissionGet == "function")
-                    return classInstance.permissionGet(rows,options.checkUserPermission, null)
-                else{
+                if (!options.hasOwnProperty("checkUserPermission") && typeof classInstance.permissionGet == "function")
+                    return classInstance.permissionGet(rows, options.checkUserPermission, null)
+                else {
                     this.userClassList.forEach(f => {
-                        if(options.hasOwnProperty("check" + f.name + "Permission") && typeof classInstance[f.name.toLowerCase() + "PermissionGet"] == "function"){
+                        if (options.hasOwnProperty("check" + f.name + "Permission") && typeof classInstance[f.name.toLowerCase() + "PermissionGet"] == "function") {
                             // return classInstance[f.name.toLowerCase() + "PermissionGet"](rows,options.checkUserPermission)
-                            return classInstance.permissionGet(rows,options.checkUserPermission, null, f)
+                            return classInstance.permissionGet(rows, options.checkUserPermission, null, f)
                         }
                     })
                 }
                 return rows;
                 break;
             case "INSERT":
-                if(!options.hasOwnProperty("checkUserPermission") && typeof classInstance.permissionInsert == "function")
-                    return classInstance.permissionInsert(parameters,options.checkUserPermission, null)
-                else{
+                if (!options.hasOwnProperty("checkUserPermission") && typeof classInstance.permissionInsert == "function")
+                    return classInstance.permissionInsert(parameters, options.checkUserPermission, null)
+                else {
                     this.userClassList.forEach(f => {
-                        if(options.hasOwnProperty("check" + f.name + "Permission") && typeof classInstance[f.name.toLowerCase() + "PermissionInsert"] == "function"){
+                        if (options.hasOwnProperty("check" + f.name + "Permission") && typeof classInstance[f.name.toLowerCase() + "PermissionInsert"] == "function") {
                             // return classInstance[f.name.toLowerCase() + "PermissionInsert"](parameters,options["check" + f.name + "Permission"])
-                            return classInstance.permissionInsert(parameters,options.checkUserPermission, f)
+                            return classInstance.permissionInsert(parameters, options.checkUserPermission, f)
                         }
                     })
                 }
                 return parameters;
                 break
             case "UPDATE":
-                if(!options.hasOwnProperty("checkUserPermission") && typeof classInstance.permissionUpdate == "function")
-                    return classInstance.permissionUpdate(parameters,options.checkUserPermission, null)
-                else{
+                if (!options.hasOwnProperty("checkUserPermission") && typeof classInstance.permissionUpdate == "function")
+                    return classInstance.permissionUpdate(parameters, options.checkUserPermission, null)
+                else {
                     this.userClassList.forEach(f => {
-                        if(options.hasOwnProperty("check" + f.name + "Permission") && typeof classInstance[f.name.toLowerCase() + "PermissionUpdate"] == "function"){
+                        if (options.hasOwnProperty("check" + f.name + "Permission") && typeof classInstance[f.name.toLowerCase() + "PermissionUpdate"] == "function") {
                             // return classInstance[f.name.toLowerCase() + "PermissionUpdate"](parameters,options["check" + f.name + "Permission"])
-                            return classInstance.permissionUpdate(parameters,options.checkUserPermission, f)
+                            return classInstance.permissionUpdate(parameters, options.checkUserPermission, f)
                         }
                     })
                 }
                 return parameters;
                 break
             case "DELETE":
-                if(!options.hasOwnProperty("checkUserPermission") && typeof classInstance.permissionDelete == "function")
-                    return classInstance.permissionDelete(parameters,options.checkUserPermission)
-                else{
+                if (!options.hasOwnProperty("checkUserPermission") && typeof classInstance.permissionDelete == "function")
+                    return classInstance.permissionDelete(parameters, options.checkUserPermission)
+                else {
                     this.userClassList.forEach(f => {
-                        if(options.hasOwnProperty("check" + f.name + "Permission") && typeof classInstance[f.name.toLowerCase() + "PermissionDelete"] == "function"){
+                        if (options.hasOwnProperty("check" + f.name + "Permission") && typeof classInstance[f.name.toLowerCase() + "PermissionDelete"] == "function") {
                             // return classInstance[f.name.toLowerCase() + "PermissionDelete"](parameters,options["check" + f.name + "Permission"])
-                            return classInstance.permissionDelete(parameters,options.checkUserPermission, f)
+                            return classInstance.permissionDelete(parameters, options.checkUserPermission, f)
                         }
                     })
                 }
@@ -505,7 +583,7 @@ class DatabaseHelper {
 }
 
 function isJson(item) {
-    if(Array.isArray(item))
+    if (Array.isArray(item))
         return true
     item = typeof item !== "string"
         ? JSON.stringify(item)
